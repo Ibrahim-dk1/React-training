@@ -1,0 +1,46 @@
+.steps {
+  background: rgb(95, 180, 209);
+  display: flex;
+  flex-direction: column;
+  align-items: center; /* Center horizontally */
+  justify-content: center; /* Center vertically */
+  min-height: 100vh; /* Full viewport height */
+  font-family: sans-serif;
+  gap: 20px;
+}
+.numbers {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.num.active {
+  background-color: #7950f2;
+}
+.num {
+  margin: 5px;
+  margin-right: 50px;
+  margin-left: 50px;
+  background-color: grey;
+  padding: 20px;
+  border-radius: 50%;
+}
+.buttons {
+  display: flex;
+}
+.buttonclass {
+  margin-left: 100px;
+  margin-right: 100px;
+  padding: 10px;
+  border-radius: 35px;
+  border-width: 0px;
+}
+.buttonclass:hover {
+  cursor: pointer;
+}
+.buttonx {
+  background-color: rgb(95, 180, 209);
+  background-color: red;
+  position: relative;
+  margin-left: 98%;
+}

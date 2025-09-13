@@ -16,7 +16,10 @@ code {
     monospace;
 }
 .Card {
-  width: 340px;
+  width: 250px; /* fixed width */
+  min-height: 150px; /* keep enough height for both Q & A */
+  margin: 10px;
+  padding: 20px;
   background: var(--card-bg);
   border-radius: var(--radius);
   box-shadow: var(--shadow);
@@ -34,17 +37,34 @@ code {
   cursor: pointer;
 }
 .card-container {
-  display: flex; /* arrange cards in a row */
-  flex-wrap: wrap; /* move to next line if not enough space */
-  gap: 16px; /* space between cards */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  margin-top: 30px;
 }
 .Card:active {
   background-color: crimson;
 }
 .selected {
-  background-color: rgba(170, 18, 18, 0.541);
+  background-color: rgba(51, 18, 170, 0.541);
+  color: white;
 }
 .question {
   display: inline-block;
   justify-self: center;
+}
+.Card,
+.selected {
+  width: 250px; /* same width for all cards */
+  min-height: 150px; /* ensures card doesn't shrink */
+  padding: 20px;
+  border-radius: 12px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.3s ease;
+  cursor: pointer;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }

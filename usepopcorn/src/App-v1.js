@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import StarRating from "./StarRating";
 
 const tempMovieData = [
@@ -51,22 +51,9 @@ const tempWatchedData = [
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
-const KEY = "65a8ecc02baa5ffe70ad071537301d13";
-
 export default function App() {
-  const [movies, setMovies] = useState([]);
-  const [watched, setWatched] = useState([]);
-
-  useEffect(function () {
-    async function fetchMovies() {
-      const res =
-        await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${KEY}&language=en-US&page=1
-`);
-      const data = await res.json();
-      setMovies(data.results);
-    }
-    fetchMovies();
-  }, []);
+  const [movies, setMovies] = useState(tempMovieData);
+  const [watched, setWatched] = useState(tempWatchedData);
 
   return (
     <>
@@ -173,15 +160,12 @@ function MovieList({ movies }) {
 function Movie({ movie }) {
   return (
     <li>
-      <img
-        src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`}
-        alt={`${movie.original_title} poster`}
-      />
-      <h3>{movie.original_title}</h3>
+      <img src={movie.Poster} alt={`${movie.Title} poster`} />
+      <h3>{movie.Title}</h3>
       <div>
         <p>
           <span>🗓</span>
-          <span>{movie.release_date}</span>
+          <span>{movie.Year}</span>
         </p>
       </div>
     </li>

@@ -47,47 +47,58 @@ const tempWatchedData = [
     userRating: 9,
   },
 ];
-
+// movie search:https://api.themoviedb.org/3/search/movie?api_key=YOUR_API_KEY&query=Inception
+//movie:https://api.themoviedb.org/3/movie/popular?api_key=${KEY}&language=en-US&page=1
 const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 const KEY = "65a8ecc02baa5ffe70ad071537301d13";
-
+const tempquery = "Interstellar";
 export default function App() {
+  const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
-  useEffect(function () {
-    async function fetchMovies() {
-      try {
-        setIsLoading(true);
-        const res =
-          await fetch(`https://api.themoviedb.org/3/movie/popular?api_key=${KEY}&language=en-US&page=1
+
+  useEffect(
+    function () {
+      async function fetchMovies() {
+        try {
+          setIsLoading(true);
+          setError("");
+          const res =
+            await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${KEY}&query=${query}
 `);
-        if (!res.ok)
-          throw new Error("Something went wrong while fetching movies");
-        const data = await res.json();
+          if (!res.ok)
+            throw new Error("Something went wrong while fetching movies");
+          const data = await res.json();
 
-        if (data.Response === "false") throw new Error("Movie not found");
-
-        setMovies(data.results);
-        setIsLoading(false);
-      } catch (err) {
-        console.error(err.message);
-        setError(err.message);
-      } finally {
-        setIsLoading(false);
+          if (data.total_results === 0) throw new Error("Movie not found");
+          setMovies(data.results);
+          //console.log(movies);
+        } catch (err) {
+          console.error(err.message);
+          setError(err.message);
+        } finally {
+          setIsLoading(false);
+        }
       }
-    }
-    fetchMovies();
-  }, []);
+      if (query.length < 3) {
+        setMovies([]);
+        setError("");
+        return;
+      }
+      fetchMovies();
+    },
+    [query]
+  );
 
   return (
     <>
       <NavBar>
         <Logo />
-        <Search />
+        <Search query={query} setQuery={setQuery} />
         <NumResult movies={movies} />
       </NavBar>
       <Main>
@@ -95,8 +106,8 @@ export default function App() {
           {" "}
           {/*isLoading ? <Loader /> : <MovieList movies={movies} />          */}
           {isLoading && <Loader />}
-          {isLoading && !error && <MovieList movies={movies} />}
           {error && <ErrorMessage message={error} />}
+          {!isLoading && !error && <MovieList movies={movies} />}
         </Box>
         <Box>
           <>
@@ -138,9 +149,7 @@ function Logo() {
     </div>
   );
 }
-function Search() {
-  const [query, setQuery] = useState("");
-
+function Search({ query, setQuery }) {
   return (
     <input
       className="search"
@@ -202,8 +211,12 @@ function Movie({ movie }) {
   return (
     <li>
       <img
-        src={`https://image.tmdb.org/t/p/original${movie.backdrop_path}`}
-        alt={`${movie.original_title} poster`}
+        src={
+          movie.poster_path === null
+            ? "https://placehold.co/500x750?text=No+Image&font=roboto"
+            : `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+        }
+        alt={`${movie.original_title}`}
       />
       <h3>{movie.original_title}</h3>
       <div>

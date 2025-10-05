@@ -53,14 +53,20 @@ const average = (arr) =>
   arr.reduce((acc, cur, i, arr) => acc + cur / arr.length, 0);
 
 const KEY = "65a8ecc02baa5ffe70ad071537301d13";
-const tempquery = "Interstellar";
 export default function App() {
   const [query, setQuery] = useState("");
   const [movies, setMovies] = useState([]);
   const [watched, setWatched] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [selectedID, setSelectedId] = useState(null);
 
+  function handleSelectMovie(id) {
+    setSelectedId((selectedID) => (id === selectedID ? null : id));
+  }
+  function handleCloseMovie() {
+    setSelectedId(null);
+  }
   useEffect(
     function () {
       async function fetchMovies() {
@@ -76,7 +82,6 @@ export default function App() {
 
           if (data.total_results === 0) throw new Error("Movie not found");
           setMovies(data.results);
-          //console.log(movies);
         } catch (err) {
           console.error(err.message);
           setError(err.message);
@@ -107,13 +112,23 @@ export default function App() {
           {/*isLoading ? <Loader /> : <MovieList movies={movies} />          */}
           {isLoading && <Loader />}
           {error && <ErrorMessage message={error} />}
-          {!isLoading && !error && <MovieList movies={movies} />}
+          {!isLoading && !error && (
+            <MovieList movies={movies} onSelectMovie={handleSelectMovie} />
+          )}
         </Box>
         <Box>
           <>
-            <WatchedSummary watched={watched} />
-            <WatchedMoviesList watched={watched} />
-            <StarRating />
+            {selectedID ? (
+              <MovieDetails
+                onCloseMovie={handleCloseMovie}
+                selectedID={selectedID}
+              />
+            ) : (
+              <>
+                <WatchedSummary watched={watched} />
+                <WatchedMoviesList watched={watched} />
+              </>
+            )}
           </>
         </Box>
       </Main>
@@ -198,18 +213,18 @@ function Box({ children }) {
     </div>
   );
 }*/
-function MovieList({ movies }) {
+function MovieList({ movies, onSelectMovie }) {
   return (
-    <ul className="list">
+    <ul className="list list-movies">
       {movies?.map((movie) => (
-        <Movie movie={movie} key={movie.imdbID} />
+        <Movie movie={movie} onSelectMovie={onSelectMovie} key={movie.imdbID} />
       ))}
     </ul>
   );
 }
-function Movie({ movie }) {
+function Movie({ movie, onSelectMovie }) {
   return (
-    <li>
+    <li onClick={() => onSelectMovie(movie.id)}>
       <img
         src={
           movie.poster_path === null
@@ -226,6 +241,71 @@ function Movie({ movie }) {
         </p>
       </div>
     </li>
+  );
+}
+
+function MovieDetails({ selectedID, onCloseMovie }) {
+  const [movie, setMovie] = useState({});
+  const [isLoading, setIsLoading] = useState(false);
+  useEffect(
+    function () {
+      async function getMovieDetails() {
+        setIsLoading(true);
+        const res = await fetch(
+          `https://api.themoviedb.org/3/movie/${selectedID}?api_key=${KEY}&language=en-US`
+        );
+        const data = await res.json();
+        setMovie(data);
+        console.log(data);
+        setIsLoading(false);
+      }
+      getMovieDetails();
+    },
+    [selectedID]
+  );
+
+  return (
+    <div className="details">
+      {isLoading ? (
+        <Loader />
+      ) : (
+        <>
+          <header>
+            <button className="btn-back" onClick={onCloseMovie}>
+              &larr;
+            </button>
+            <img
+              src={
+                movie.poster_path === null
+                  ? "https://placehold.co/500x750?text=No+Image&font=roboto"
+                  : `https://image.tmdb.org/t/p/w500${movie.poster_path}`
+              }
+              alt={`Poster of ${movie} movie`}
+            />
+            <div className="details-overview">
+              <h2>{movie.title}</h2>
+              <p>
+                {movie.release_date} &bull; {movie.runtime}
+              </p>
+              <p>{movie.genres?.map((genre) => genre.name).join(",")}</p>
+              <p>
+                <span>⭐</span>
+                {movie.vote_average} IMDb rating
+              </p>{" "}
+            </div>
+          </header>
+          <section>
+            <div className="rating">
+              {" "}
+              <StarRating maxRating={10} size={24} />
+            </div>
+            <p>
+              <em>{movie.overview}</em>
+            </p>
+          </section>
+        </>
+      )}
+    </div>
   );
 }
 

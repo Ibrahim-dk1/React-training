@@ -18,6 +18,7 @@ export default function StarRating({
   maxRating = 5,
   color = "#fcc419",
   size = 48,
+  onSetRating,
 }) {
   const [rating, setRating] = useState(0);
   const [tempRating, settempRating] = useState(0);
@@ -34,7 +35,10 @@ export default function StarRating({
         {Array.from({ length: maxRating }, (_, i) => (
           <Star
             key={i}
-            onRate={() => setRating(i + 1)}
+            onRate={() => {
+              setRating(i + 1); // update stars inside component
+              onSetRating(i + 1); // tell parent MovieDetails
+            }}
             full={tempRating ? tempRating >= i + 1 : rating >= i + 1}
             onHoverIn={() => settempRating(i + 1)}
             onHoverOut={() => settempRating(0)}

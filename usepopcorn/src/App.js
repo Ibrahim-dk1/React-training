@@ -70,15 +70,23 @@ export default function App() {
   function handleAddWatched(movie) {
     setWatched((watched) => [...watched, movie]);
   }
+  function handleDeleteWatched(id) {
+    setWatched((watched) => watched.filter((movie) => movie.id !== id));
+  }
+
   useEffect(
     function () {
+      const controller = new AbortController();
+
       async function fetchMovies() {
         try {
           setIsLoading(true);
           setError("");
-          const res =
-            await fetch(`https://api.themoviedb.org/3/search/movie?api_key=${KEY}&query=${query}
-`);
+          const res = await fetch(
+            `https://api.themoviedb.org/3/search/movie?api_key=${KEY}&query=${query}
+`,
+            { signal: controller.signal }
+          );
           if (!res.ok)
             throw new Error("Something went wrong while fetching movies");
           const data = await res.json();
@@ -87,7 +95,10 @@ export default function App() {
           setMovies(data.results);
         } catch (err) {
           console.error(err.message);
-          setError(err.message);
+          if (err.name !== "AbortError") {
+            setError(err.message);
+            setError("");
+          }
         } finally {
           setIsLoading(false);
         }
@@ -97,7 +108,11 @@ export default function App() {
         setError("");
         return;
       }
+      handleCloseMovie();
       fetchMovies();
+      return function () {
+        controller.abort();
+      };
     },
     [query]
   );
@@ -131,7 +146,10 @@ export default function App() {
             ) : (
               <>
                 <WatchedSummary watched={watched} />
-                <WatchedMoviesList watched={watched} />
+                <WatchedMoviesList
+                  watched={watched}
+                  onDeleteWatched={handleDeleteWatched}
+                />
               </>
             )}
           </>
@@ -254,8 +272,10 @@ function MovieDetails({ selectedID, onCloseMovie, onAddWatched, watched }) {
   const [isLoading, setIsLoading] = useState(false);
   const [userRating, setUserRating] = useState(0);
 
-  const isWatched = watched.map((movie) => movie.id);
-  console.log(isWatched);
+  const isWatched = watched.map((movie) => movie.id).includes(selectedID);
+  const watchedUserRating = watched.find(
+    (movie) => movie.id === selectedID
+  )?.userRating;
   function handleAdd() {
     const newWatchedMovie = {
       id: selectedID,
@@ -271,6 +291,22 @@ function MovieDetails({ selectedID, onCloseMovie, onAddWatched, watched }) {
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }
+
+  useEffect(
+    function () {
+      function callback(e) {
+        if (e.code === "Escape") {
+          onCloseMovie();
+        }
+      }
+      document.addEventListener("keydown", callback);
+      return function () {
+        document.removeEventListener("keydown", callback);
+      };
+    },
+    [onCloseMovie]
+  );
+
   useEffect(
     function () {
       async function getMovieDetails() {
@@ -280,12 +316,23 @@ function MovieDetails({ selectedID, onCloseMovie, onAddWatched, watched }) {
         );
         const data = await res.json();
         setMovie(data);
-        console.log(data);
         setIsLoading(false);
       }
       getMovieDetails();
     },
     [selectedID]
+  );
+
+  useEffect(
+    function () {
+      if (!movie.title) return;
+      document.title = `Movie | ${movie.title}`;
+
+      return function () {
+        document.title = "UsePopcorn";
+      };
+    },
+    [movie.title]
   );
 
   return (
@@ -321,18 +368,23 @@ function MovieDetails({ selectedID, onCloseMovie, onAddWatched, watched }) {
           <section>
             <div className="rating">
               {" "}
-              {
-                <StarRating
-                  maxRating={10}
-                  size={24}
-                  rating={userRating}
-                  onSetRating={setUserRating}
-                />
-              }
-              {userRating > 0 && (
-                <button className="btn-add" onClick={handleAdd}>
-                  + Add to list
-                </button>
+              {!isWatched ? (
+                <>
+                  <StarRating
+                    maxRating={10}
+                    size={24}
+                    rating={userRating}
+                    onSetRating={setUserRating}
+                  />
+
+                  {userRating > 0 && (
+                    <button className="btn-add" onClick={handleAdd}>
+                      + Add to list
+                    </button>
+                  )}
+                </>
+              ) : (
+                <p>You rated this movie {watchedUserRating} ⭐</p>
               )}
             </div>
             <p>
@@ -359,11 +411,11 @@ function WatchedSummary({ watched }) {
         </p>
         <p>
           <span>⭐️</span>
-          <span>{avgImdbRating}</span>
+          <span>{avgImdbRating.toFixed(2)}</span>
         </p>
         <p>
           <span>🌟</span>
-          <span>{avgUserRating}</span>
+          <span>{avgUserRating.toFixed(2)}</span>
         </p>
         <p>
           <span>⏳</span>
@@ -373,16 +425,20 @@ function WatchedSummary({ watched }) {
     </div>
   );
 }
-function WatchedMoviesList({ watched }) {
+function WatchedMoviesList({ watched, onDeleteWatched }) {
   return (
     <ul className="list">
       {watched.map((movie) => (
-        <WatchedMovie movie={movie} key={movie.imdbID} />
+        <WatchedMovie
+          movie={movie}
+          key={movie.imdbID}
+          onDeleteWatched={onDeleteWatched}
+        />
       ))}
     </ul>
   );
 }
-function WatchedMovie({ movie }) {
+function WatchedMovie({ movie, onDeleteWatched }) {
   return (
     <li>
       <img src={movie.poster} alt={`${movie.Title} poster`} />
@@ -400,6 +456,12 @@ function WatchedMovie({ movie }) {
           <span>⏳</span>
           <span>{movie.runtime} min</span>
         </p>
+        <button
+          className="btn-delete"
+          onClick={() => onDeleteWatched(movie.id)}
+        >
+          X
+        </button>
       </div>
     </li>
   );

@@ -242,6 +242,7 @@ function MovieDetails({ selectedID, onCloseMovie, onAddWatched, watched }) {
       runtime: movie.runtime || 0,
       userRating,
     };
+    //if (movie.vote_average > 8) [isTop, setIsTop] = useState(true);
     onAddWatched(newWatchedMovie);
     onCloseMovie();
   }

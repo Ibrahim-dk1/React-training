@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import StarRating from "./StarRating";
 
 // movie search:https://api.themoviedb.org/3/search/movie?api_key=YOUR_API_KEY&query=Inception
@@ -16,7 +16,7 @@ export default function App() {
   //const [watched, setWatched] = useState([]);
   const [watched, setWatched] = useState(function () {
     const storedValue = localStorage.getItem("watched");
-    return JSON.parse(storedValue);
+    return storedValue ? JSON.parse(storedValue) : [];
   });
 
   function handleSelectMovie(id) {
@@ -154,6 +154,28 @@ function Logo() {
   );
 }
 function Search({ query, setQuery }) {
+  const inputEl = useRef(null);
+
+  useEffect(
+    function () {
+      function callback(e) {
+        if (document.activeElement === inputEl.current) return;
+
+        if (e.code === "Enter") {
+          inputEl.current.focus();
+          setQuery("");
+        }
+      }
+      document.addEventListener("keydown", callback);
+      return () => document.addEventListener("keydown", callback);
+    },
+    [setQuery]
+  );
+  // useEffect(function () {
+  //   const el = document.querySelector(".search");
+  //   el.focus();
+  // }, []);
+
   return (
     <input
       className="search"
@@ -161,6 +183,7 @@ function Search({ query, setQuery }) {
       placeholder="Search movies..."
       value={query}
       onChange={(e) => setQuery(e.target.value)}
+      ref={inputEl}
     />
   );
 }
@@ -368,6 +391,7 @@ function WatchedSummary({ watched }) {
   const avgImdbRating = average(watched.map((movie) => movie.imdbRating));
   const avgUserRating = average(watched.map((movie) => movie.userRating));
   const avgRuntime = average(watched.map((movie) => movie.runtime));
+
   return (
     <div className="summary">
       <h2>Movies you watched</h2>
@@ -398,7 +422,7 @@ function WatchedMoviesList({ watched, onDeleteWatched }) {
       {watched.map((movie) => (
         <WatchedMovie
           movie={movie}
-          key={movie.imdbID}
+          key={movie.id}
           onDeleteWatched={onDeleteWatched}
         />
       ))}
@@ -408,7 +432,7 @@ function WatchedMoviesList({ watched, onDeleteWatched }) {
 function WatchedMovie({ movie, onDeleteWatched }) {
   return (
     <li>
-      <img src={movie.poster} alt={`${movie.Title} poster`} />
+      <img src={movie.poster} alt={`${movie.title} poster`} />
       <h3>{movie.title}</h3>
       <div>
         <p>
